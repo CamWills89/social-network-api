@@ -1,10 +1,5 @@
 const { Schema, model, Types } = require("mongoose");
 
-// var validateEmail = function (email) {
-//   var validEmail = /^([a-zA-Z0-9_\.-]+)@([\da-z\.-]+)\.([a-z]{2,6})(\.[a-z]{2,6})?$/;
-//   return validEmail.test(email);
-// };
-
 const UserSchema = new Schema(
   {
     username: {
@@ -28,12 +23,14 @@ const UserSchema = new Schema(
       },
     },
     thoughts: [
+      //expect an objectId and the data comes from the Thought model
       {
         type: Schema.Types.ObjectId,
         ref: "Thought",
       },
     ],
     friends: [
+      //expect an objectId and is self-referencing the User model
       {
         type: Schema.Types.ObjectId,
         ref: "User",
@@ -48,15 +45,21 @@ const UserSchema = new Schema(
   }
 );
 
-//get total count of friends on retrieval
+//get total count of friends
 UserSchema.virtual("friendCount").get(function () {
   return this.friends.length;
 });
 
-//get total count of thoughts on retrieval
+//get total count of thoughts and reactions
 UserSchema.virtual("thoughtCount").get(function () {
   return this.thoughts.reduce(
     (total, thought) => total + thought.reactions.length + 1,
     0
   );
 });
+
+//create the User model using UserSchema
+const User = model("User", UserSchema);
+
+//export the User model
+module.exports = User;
