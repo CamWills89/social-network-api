@@ -1,4 +1,4 @@
-const { User } = require("../models");
+const { User, Thought } = require("../models");
 const mongoose = require("mongoose");
 
 const userController = {
@@ -61,7 +61,7 @@ const userController = {
     })
       .then((dbUserData) => {
         if (!dbUserData) {
-          res.status(404).json({ message: "No pizza found with this id!" });
+          res.status(404).json({ message: "No user found with this id!" });
           return;
         }
         res.json(dbUserData);
@@ -72,34 +72,48 @@ const userController = {
   // DELETE /api/users/id
   //delete user
   deleteUser({ params }, res) {
+    // delete the user
     User.findOneAndDelete({ _id: params.id })
       .then((dbUserData) => {
         if (!dbUserData) {
-          res.status(404).json({ message: "No pizza found with this id!" });
+          res.status(404).json({ message: "No user found with this id" });
           return;
         }
-        res.json(dbUserData);
+        // remove the user from any friends arrays
+        User.updateMany(
+            //look for id in friends array and remove it
+          { _id: { $in: dbUserData.friends } },
+          { $pull: { friends: params.id } }
+        )
+          .then(() => {
+            // remove any thoughts from this user
+            Thought.deleteMany({ username: dbUserData.username })
+              .then(() => {
+                res.json({ message: "Successfully deleted user" });
+              })
+              .catch((err) => res.status(400).json(err));
+          })
+          .catch((err) => res.status(400).json(err));
       })
       .catch((err) => res.status(400).json(err));
   },
-
   //add a Friend
   addFriend({ params }, res) {
     User.findByIdAndUpdate(
       { _id: params.id },
+      //we add to set, so we prevent duplicates friend ids being added.
       { $addToSet: { friends: params.friendId } },
       { new: true }
     )
       .select("-__v")
       .then((dbUserData) => {
         if (!dbUserData) {
-          res.status(404).json({ message: "No thought found with this id!" });
+          res.status(404).json({ message: "No user found with this id!" });
           return;
         }
         res.json(dbUserData);
       })
       .catch((err) => {
-        console.log(err);
         res.status(400).json(err);
       });
   },
@@ -114,7 +128,7 @@ const userController = {
       .select("-__v")
       .then((dbUserData) => {
         if (!dbUserData) {
-          res.status(404).json({ message: "No thought found with this id!" });
+          res.status(404).json({ message: "No friend found with this id!" });
           return;
         }
         res.json(dbUserData);
