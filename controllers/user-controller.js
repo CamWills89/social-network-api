@@ -11,7 +11,7 @@ const userController = {
         //we dont want the __v included in the thoughts
         select: "-__v",
       })
-      //we dont want the __v included in the pizza data either
+      //we dont want the __v included in the user data either
       .select("-__v")
       //newest user returns first using sort (-1, says in DESC order by id value)
       .sort({ _id: -1 })
